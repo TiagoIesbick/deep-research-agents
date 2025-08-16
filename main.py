@@ -1,7 +1,8 @@
 import gradio as gr
 from dotenv import load_dotenv
 from manager_agent import ManagerAgent
-from schema import ResearchContext
+from schema import ResearchContext, Answer, Question
+from typing import List, Tuple
 import asyncio
 
 
@@ -9,34 +10,43 @@ load_dotenv(override=True)
 
 manager = ManagerAgent()
 
-async def agent_chat(user_message, chat_history=None):
-    if chat_history is None:
-        chat_history = []
+async def agent_chat(user_message: str, chat_history: List[Tuple[str, str]] | None = None):
+    if not chat_history:
+        # First user message is the initial query
         manager.context = ResearchContext(initial_query=user_message, qa_history=[])
+        chat_history = []
     else:
-        manager.context.initial_query = manager.context.initial_query or user_message
+        # For follow-up: attach the user's message as the answer to the last QAItem
+        if manager.context.qa_history and manager.context.qa_history[-1].answer is None:
+            manager.context.qa_history[-1].answer = Answer(answer=user_message)
 
-    # Update initial query only on first message
-    if not manager.context.initial_query:
-        manager.context.initial_query = user_message
+    print('[manager context]:', manager.context)
 
-    # Let the agent reason, call tools, and update qa_history
-    result = await manager.run(manager.context.initial_query)
+    # Run the manager agent with the updated context
+    result = await manager.run()
+    
+    print('[manager result]:', result)
 
-    # Append messages to chat history
-    chat_history.append(("User", user_message))
-    chat_history.append(("Agent", str(result)))
+    # Append user message and agent response to chat history
+    chat_history.append({"role": "user", "content": user_message})
+    print('[chat user]:', chat_history)
+    if isinstance(result, Question):
+        chat_history.append({"role": "assistant", "content": result.question}) # agent asked a question
+        print('[chat agent question]:', chat_history)
+    else:
+        chat_history.append({"role": "assistant", "content": result.final_output}) # final web search plan
+        print('[chat agent]:', chat_history)
 
     return chat_history, chat_history
 
 
 # Gradio synchronous wrapper for async
-def sync_agent_chat(user_message, chat_history=None):
+def sync_agent_chat(user_message, chat_history: List[Tuple[str, str]] | None = None):
     return asyncio.run(agent_chat(user_message, chat_history))
 
 def main():
     with gr.Blocks() as demo:
-        chatbot = gr.Chatbot(label="Research Agent")
+        chatbot = gr.Chatbot(label="Research Agent", type="messages")
         msg = gr.Textbox(label="Your message")
         state = gr.State([])
 

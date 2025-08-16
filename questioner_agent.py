@@ -63,7 +63,7 @@ class FollowUpQuestionTool:
 
             # Format the Q&A history
             formatted_history = "\n".join(
-                [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer}"
+                [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer.answer}"
                  for i, item in enumerate(qa_history)]
             )
 

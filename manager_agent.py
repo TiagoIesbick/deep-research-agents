@@ -1,6 +1,6 @@
 from questioner_agent import InitialQuestionTool, FollowUpQuestionTool, HOW_MANY_QUESTIONS
 from planner_agent import WebSearchPlannerTool
-from schema import ResearchContext
+from schema import ResearchContext, Question, QAItem
 from agents import Agent, Runner, trace
 
 
@@ -48,17 +48,34 @@ Rules:
             model="gpt-5"
         )
 
-    async def run(self, initial_query: str):
-        if not self.context.initial_query:
-            self.context.initial_query = initial_query
+    async def run(self):
+        """Run the manager with the current context (does not overwrite user input)."""
+        role_map = {"Agent": "assistant", "User": "user"}
+
+        # Build conversation history for Runner
+        input_data = [{"role": "user", "content": self.context.initial_query}]
+
+        for qa_item in self.context.qa_history:
+            # Agent's question
+            input_data.append({
+                "role": role_map[qa_item.question.role],
+                "content": qa_item.question.question
+            })
+            # User's answer (if present)
+            if qa_item.answer:
+                input_data.append({
+                    "role": role_map[qa_item.answer.role],
+                    "content": qa_item.answer.answer
+                })
 
         with trace("Research Manager Session"):
-            input_data = [{"role": "user", "content": self.context.initial_query}]
-            for qa_item in self.context.qa_history:
-                input_data.append({"role": "assistant", "content": qa_item.question.question})
-                input_data.append({"role": "user", "content": qa_item.answer})
             print('[input to Runner.run]:', input_data)
             result = await Runner.run(self.agent, input_data)
             print('[result]:', result)
+            
+        # If the result is a Question → add a QAItem (without answer yet)
+        if isinstance(result, Question):
+            print('[question]:', result.final_output)
+            self.context.qa_history.append(QAItem(question=result))
 
         return result

@@ -3,13 +3,19 @@ from typing import List
 
 
 class Question(BaseModel):
+    role: str = Field(default="Agent", description="Always 'Agent' for AI questions")
     reasoning: str = Field(description="Your reasoning for why this question is important to ask at this point.")
     question: str = Field(description="The question to ask.")
 
 
+class Answer(BaseModel):
+    role: str = Field(default="User", description="Always 'User' for answers")
+    answer: str = Field(description="The user's answer to the corresponding question.")
+
+
 class QAItem(BaseModel):
     question: Question
-    answer: str = Field(description="The user's answer to the corresponding question.")
+    answer: Answer | None = None
 
 
 class ResearchContext(BaseModel):

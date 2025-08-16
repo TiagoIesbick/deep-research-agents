@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from schema import ResearchContext, WebSearchPlan
 from agents import Agent
+
 
 HOW_MANY_SEARCHES = 3
 
@@ -14,15 +15,6 @@ Initial query:
 Q&A history:
 {{qa_history}}
 """
-
-
-class WebSearchItem(BaseModel):
-    reason: str = Field(description="Your reasoning for why this search is important to the query.")
-    query: str = Field(description="The search term to use for the web search.")
-
-
-class WebSearchPlan(BaseModel):
-    searches: list[WebSearchItem] = Field(description="A list of web searches to perform to best answer the query.")
 
 
 class WebSearchPlannerTool:
@@ -42,21 +34,16 @@ class WebSearchPlannerTool:
         )
 
         # Wrap run() so we can feed richer context
-        async def run_with_context(context: dict) -> WebSearchPlan:
+        async def run_with_context(context: ResearchContext) -> WebSearchPlan:
             """
             Generate a plan of web searches from richer context.
-            Expected context:
-                {
-                    "initial_query": str,
-                    "qa_history": list[dict]  # [{question: str, answer: str}, ...]
-                }
             """
-            initial_query = context.get("initial_query", "")
-            qa_history = context.get("qa_history", [])
+            initial_query = context.initial_query
+            qa_history = context.qa_history
 
             # Format the Q&A history
             formatted_history = "\n".join(
-                [f"Q{i+1}: {item['question']}\nA{i+1}: {item['answer']}"
+                [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer}"
                  for i, item in enumerate(qa_history)]
             )
 

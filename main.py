@@ -1,79 +1,47 @@
 import gradio as gr
 from dotenv import load_dotenv
+from manager_agent import ManagerAgent
+from schema import ResearchContext
 import asyncio
-from research_manager import ResearchManager
-from tool_registry import get_tool_registry, list_tools
+
 
 load_dotenv(override=True)
 
+manager = ManagerAgent()
 
-def run_research_sync(query: str):
-    """Synchronous wrapper for the research workflow."""
-    async def run_research():
-        manager = ResearchManager()
-        results = []
-        async for result in manager.run(query):
-            results.append(result)
-        return "\n".join(results)
-    
-    # Run the async function in the event loop
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If we're already in an event loop, create a new one
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, run_research())
-                return future.result()
-        else:
-            return asyncio.run(run_research())
-    except RuntimeError:
-        # Fallback for when no event loop is available
-        return asyncio.run(run_research())
+async def agent_chat(user_message, chat_history=None):
+    if chat_history is None:
+        chat_history = []
+        manager.context = ResearchContext(initial_query=user_message, qa_history=[])
+    else:
+        manager.context.initial_query = manager.context.initial_query or user_message
+
+    # Update initial query only on first message
+    if not manager.context.initial_query:
+        manager.context.initial_query = user_message
+
+    # Let the agent reason, call tools, and update qa_history
+    result = await manager.run(manager.context.initial_query)
+
+    # Append messages to chat history
+    chat_history.append(("User", user_message))
+    chat_history.append(("Agent", str(result)))
+
+    return chat_history, chat_history
 
 
-def list_available_tools():
-    """List all available tools in the system."""
-    return list_tools()
-
+# Gradio synchronous wrapper for async
+def sync_agent_chat(user_message, chat_history=None):
+    return asyncio.run(agent_chat(user_message, chat_history))
 
 def main():
-    print("Deep Research Agents - Tool-Based Architecture")
-    print("=" * 50)
-    
-    # Show available tools
-    print("\nAvailable Tools:")
-    print(list_available_tools())
-    
-    # Create Gradio interface
-    with gr.Blocks(title="Deep Research Agents") as demo:
-        gr.Markdown("# 🔍 Deep Research Agents")
-        gr.Markdown("AI-powered research using a tool-based architecture")
-        
-        with gr.Row():
-            with gr.Column():
-                query_input = gr.Textbox(
-                    label="Research Query",
-                    placeholder="Enter your research question here...",
-                    lines=3
-                )
-                run_btn = gr.Button("🚀 Start Research", variant="primary")
-            
-            with gr.Column():
-                tools_info = gr.Markdown("**Available Tools:**\n" + list_available_tools())
-        
-        output = gr.Textbox(
-            label="Research Results",
-            lines=20,
-            interactive=False
-        )
-        
-        run_btn.click(
-            fn=run_research_sync,
-            inputs=[query_input],
-            outputs=[output]
-        )
-    
+    with gr.Blocks() as demo:
+        chatbot = gr.Chatbot(label="Research Agent")
+        msg = gr.Textbox(label="Your message")
+        state = gr.State([])
+
+        msg.submit(sync_agent_chat, inputs=[msg, state], outputs=[chatbot, state])
+
     demo.launch()
 
 

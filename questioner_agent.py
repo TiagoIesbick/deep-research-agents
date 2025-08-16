@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from schema import Question, ResearchContext
 from agents import Agent
 
 
@@ -18,11 +18,6 @@ Context so far:
 
 Ask the next question that will provide the most valuable insight to understand what the user really wants.
 Focus on areas that haven't been clarified yet. Be specific and build upon the information you already have."""
-
-
-class Question(BaseModel):
-    reasoning: str = Field(description="Your reasoning for why this question is important to ask at this point.")
-    question: str = Field(description="The question to ask.")
 
 
 # Tool for asking the first question
@@ -59,20 +54,16 @@ class FollowUpQuestionTool:
             tool_description="Ask a follow-up question based on previous context and user answers"
         )
 
-        async def run_with_context(context: dict) -> Question:
+        async def run_with_context(context: ResearchContext) -> Question:
             """
-            Expected context:
-                {
-                    "initial_query": str,
-                    "qa_history": list[dict]  # [{question: str, answer: str}, ...]
-                }
+            Generate a question from richer context.
             """
-            initial_query = context.get("initial_query", "")
-            qa_history = context.get("qa_history", [])
+            initial_query = context.initial_query
+            qa_history = context.qa_history
 
             # Format the Q&A history
             formatted_history = "\n".join(
-                [f"Q{i+1}: {item['question']}\nA{i+1}: {item['answer']}"
+                [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer}"
                  for i, item in enumerate(qa_history)]
             )
 

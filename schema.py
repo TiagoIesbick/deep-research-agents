@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from typing import List
 
 
 class Question(BaseModel):
@@ -20,7 +19,20 @@ class QAItem(BaseModel):
 
 class ResearchContext(BaseModel):
     initial_query: str = Field(..., description="The user's original query.")
-    qa_history: List[QAItem] = Field(default_factory=list, description="List of asked questions and their answers.")
+    qa_history: list[QAItem] = Field(default_factory=list, description="List of asked questions and their answers.")
+
+    def to_json_str(self) -> str:
+        """Compact JSON string for feeding into prompts."""
+        return self.model_dump_json(indent=2, exclude_none=True)
+
+    def to_text_summary(self) -> str:
+        """Readable text version for LLM reasoning."""
+        summary = [f"Initial query: {self.initial_query}"]
+        for i, item in enumerate(self.qa_history, start=1):
+            summary.append(f"Q{i}: {item.question.question}")
+            if item.answer:
+                summary.append(f"A{i}: {item.answer.answer}")
+        return "\n".join(summary)
 
 
 class WebSearchItem(BaseModel):
@@ -29,4 +41,4 @@ class WebSearchItem(BaseModel):
 
 
 class WebSearchPlan(BaseModel):
-    searches: List[WebSearchItem] = Field(default_factory=list, description="A list of web searches to perform to best answer the query.")
+    searches: list[WebSearchItem] = Field(default_factory=list, description="A list of web searches to perform to best answer the query.")

@@ -18,13 +18,16 @@ Q&A history:
 
 
 class WebSearchPlannerTool:
+    input_type = ResearchContext
+    output_type = WebSearchPlan
+
     def __new__(cls):
         # Create the agent
         agent = Agent(
             name="PlannerAgent",
             instructions="Placeholder — will be overwritten at runtime",
             model="gpt-5-mini",
-            output_type=WebSearchPlan,
+            output_type=cls.output_type,
         )
 
         # Create the base tool
@@ -51,6 +54,8 @@ class WebSearchPlannerTool:
                 initial_query=initial_query,
                 qa_history=formatted_history
             )
+            
+            print('[planner instructions]:', agent.instructions)
 
             return await agent.run("")
 

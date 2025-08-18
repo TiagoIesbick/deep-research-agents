@@ -22,12 +22,15 @@ Focus on areas that haven't been clarified yet. Be specific and build upon the i
 
 # Tool for asking the first question
 class InitialQuestionTool:
+    input_type = str
+    output_type = Question
+
     def __new__(cls):
         agent = Agent(
             name="InitialQuestioner",
             instructions=INITIAL_INSTRUCTIONS,
             model="gpt-5-mini",
-            output_type=Question,
+            output_type=cls.output_type,
         )
 
         tool = agent.as_tool(
@@ -40,13 +43,16 @@ class InitialQuestionTool:
 
 # Tool for asking follow-up questions
 class FollowUpQuestionTool:
+    input_type = ResearchContext
+    output_type = Question
+
     def __new__(cls):
         # Create a "blank" agent with dummy instructions — we'll override per run
         agent = Agent(
             name="FollowUpQuestioner",
             instructions="Placeholder — will be overwritten at runtime",
             model="gpt-5-mini",
-            output_type=Question,
+            output_type=cls.output_type,
         )
 
         tool = agent.as_tool(

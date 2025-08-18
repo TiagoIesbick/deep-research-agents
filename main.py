@@ -1,8 +1,7 @@
 import gradio as gr
 from dotenv import load_dotenv
 from manager_agent import ManagerAgent
-from schema import ResearchContext, Answer, Question
-from typing import List, Tuple
+from schema import ResearchContext, Answer, Question, WebSearchPlan
 import asyncio
 
 
@@ -10,7 +9,7 @@ load_dotenv(override=True)
 
 manager = ManagerAgent()
 
-async def agent_chat(user_message: str, chat_history: List[Tuple[str, str]] | None = None):
+async def agent_chat(user_message: str, chat_history: list[dict[str, str]] | None = None):
     if not chat_history:
         # First user message is the initial query
         manager.context = ResearchContext(initial_query=user_message, qa_history=[])
@@ -31,17 +30,20 @@ async def agent_chat(user_message: str, chat_history: List[Tuple[str, str]] | No
     chat_history.append({"role": "user", "content": user_message})
     print('[chat user]:', chat_history)
     if isinstance(result, Question):
+        print('[result question]:', result.question)
         chat_history.append({"role": "assistant", "content": result.question}) # agent asked a question
         print('[chat agent question]:', chat_history)
-    else:
-        chat_history.append({"role": "assistant", "content": result.final_output}) # final web search plan
+    elif isinstance(result, WebSearchPlan):
+        print('[web search plan]:', result)
+        searches = "\n".join([search.query for search in result.searches])
+        chat_history.append({"role": "assistant", "content": searches}) # final web search plan
         print('[chat agent]:', chat_history)
 
     return chat_history, chat_history
 
 
 # Gradio synchronous wrapper for async
-def sync_agent_chat(user_message, chat_history: List[Tuple[str, str]] | None = None):
+def sync_agent_chat(user_message, chat_history: list[dict[str, str]] | None = None):
     return asyncio.run(agent_chat(user_message, chat_history))
 
 def main():

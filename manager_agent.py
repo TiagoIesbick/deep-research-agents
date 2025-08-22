@@ -11,7 +11,7 @@ class ManagerAgent:
 
         self.tools = [
             InitialQuestionTool(),
-            FollowUpQuestionTool(),
+            FollowUpQuestionTool(self.context),
             WebSearchPlannerTool(),
         ]
 
@@ -25,7 +25,7 @@ You have three tools:
    - Use this ONLY once, at the very beginning.
    - This produces the first clarifying question for the user.
 
-2. ask_follow_up_question(context: ResearchContext) → Question
+2. ask_follow_up_question() → Question
    - Use this exactly {HOW_MANY_QUESTIONS - 1} times, after the initial question, to further clarify scope.
    - Each follow-up must build directly on the user’s previous answer.
    - Do not repeat or rephrase earlier questions.

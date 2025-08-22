@@ -43,10 +43,10 @@ class InitialQuestionTool:
 
 # Tool for asking follow-up questions
 class FollowUpQuestionTool:
-    input_type = ResearchContext
+    input_type = None
     output_type = Question
 
-    def __new__(cls):
+    def __new__(cls, context: ResearchContext):
         # Create a "blank" agent with dummy instructions — we'll override per run
         agent = Agent(
             name="FollowUpQuestioner",
@@ -60,10 +60,11 @@ class FollowUpQuestionTool:
             tool_description="Ask a follow-up question based on previous context and user answers"
         )
 
-        async def run_with_context(context: ResearchContext) -> Question:
+        async def run_with_context() -> Question:
             """
             Generate a question from richer context.
             """
+            print(">>> Entered run_with_context for FollowUpQuestionTool")
             initial_query = context.initial_query
             qa_history = context.qa_history
 
@@ -78,8 +79,11 @@ class FollowUpQuestionTool:
                 initial_query=initial_query,
                 previous_answers=formatted_history
             )
+            
+            print('[follow_up_instructions]:', agent.instructions)
 
             return await agent.run("")
 
         tool.run = run_with_context
+        print("Tool run has been overridden:", tool.run)
         return tool

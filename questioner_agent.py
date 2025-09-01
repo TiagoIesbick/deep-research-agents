@@ -5,19 +5,23 @@ from agents import Agent
 HOW_MANY_QUESTIONS = 3
 
 # Instructions for the initial question
-INITIAL_INSTRUCTIONS = """You are a helpful research assistant. Given a user's initial query, ask the first question to better understand what they really want.
-Your question should be focused and help clarify the user's intent. Be specific and ask about the most important aspect first."""
+INITIAL_INSTRUCTIONS = """
+You are a helpful research assistant. Given a user's initial query, ask the first question to better understand what they really want.
+Your question should be focused and help clarify the user's intent. Be specific and ask about the most important aspect first.
+"""
 
 # Instructions for follow-up questions
-FOLLOW_UP_INSTRUCTIONS_TEMPLATE = """You are a helpful research assistant conducting an interactive questioning session.
-Based on the user's initial query and their previous answers, ask the next question to further clarify their needs.
+FOLLOW_UP_INSTRUCTIONS = """
+You are a helpful research assistant conducting an interactive questioning session.
+The user input will be a ResearchContext JSON string. Parse it to get the initial_query and qa_history.
 
-Context so far:
-- Initial query: {initial_query}
-- Previous answers: {previous_answers}
+Based on the initial query and previous answers from qa_history, ask the next question to further clarify their needs.
 
 Ask the next question that will provide the most valuable insight to understand what the user really wants.
-Focus on areas that haven't been clarified yet. Be specific and build upon the information you already have."""
+Focus on areas that haven't been clarified yet. Be specific and build upon the information you already have.
+
+Parse the JSON from the user message, then use it to generate the question.
+"""
 
 
 # Tool for asking the first question
@@ -46,11 +50,11 @@ class FollowUpQuestionTool:
     input_type = None
     output_type = Question
 
-    def __new__(cls, context: ResearchContext):
+    def __new__(cls):
         # Create a "blank" agent with dummy instructions — we'll override per run
         agent = Agent(
             name="FollowUpQuestioner",
-            instructions="Placeholder — will be overwritten at runtime",
+            instructions=FOLLOW_UP_INSTRUCTIONS,
             model="gpt-5-mini",
             output_type=cls.output_type,
         )
@@ -60,30 +64,31 @@ class FollowUpQuestionTool:
             tool_description="Ask a follow-up question based on previous context and user answers"
         )
 
-        async def run_with_context() -> Question:
-            """
-            Generate a question from richer context.
-            """
-            print(">>> Entered run_with_context for FollowUpQuestionTool")
-            initial_query = context.initial_query
-            qa_history = context.qa_history
+        # async def run_with_context() -> Question:
+        #     """
+        #     Generate a question from richer context.
+        #     """
+        #     print(">>> Entered run_with_context for FollowUpQuestionTool")
+        #     print('[context]:', context.to_text_summary())
+        #     initial_query = context.initial_query
+        #     qa_history = context.qa_history
 
-            # Format the Q&A history
-            formatted_history = "\n".join(
-                [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer.answer}"
-                 for i, item in enumerate(qa_history)]
-            )
+        #     # Format the Q&A history
+        #     formatted_history = "\n".join(
+        #         [f"Q{i+1}: {item.question.question}\nA{i+1}: {item.answer.answer}"
+        #          for i, item in enumerate(qa_history)]
+        #     )
 
-            # Overwrite instructions dynamically
-            agent.instructions = FOLLOW_UP_INSTRUCTIONS_TEMPLATE.format(
-                initial_query=initial_query,
-                previous_answers=formatted_history
-            )
+        #     # Overwrite instructions dynamically
+        #     agent.instructions = FOLLOW_UP_INSTRUCTIONS_TEMPLATE.format(
+        #         initial_query=initial_query,
+        #         previous_answers=formatted_history
+        #     )
             
-            print('[follow_up_instructions]:', agent.instructions)
+        #     print('[follow_up_instructions]:', agent.instructions)
 
-            return await agent.run("")
+        #     return await agent.run("")
 
-        tool.run = run_with_context
-        print("Tool run has been overridden:", tool.run)
+        # tool.run = run_with_context
+        # print("Tool run has been overridden:", tool.run)
         return tool

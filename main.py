@@ -23,7 +23,7 @@ async def agent_chat(user_message: str, chat_history: list[dict[str, str]] | Non
 
     # Run the manager agent with the updated context
     result = await manager.run()
-    
+
     print('[manager result]:', result)
 
     # Append user message and agent response to chat history
@@ -43,7 +43,7 @@ async def agent_chat(user_message: str, chat_history: list[dict[str, str]] | Non
 
 
 # Gradio synchronous wrapper for async
-def sync_agent_chat(user_message, chat_history: list[dict[str, str]] | None = None):
+def sync_agent_chat(user_message: str, chat_history: list[dict[str, str]] | None = None):
     return asyncio.run(agent_chat(user_message, chat_history))
 
 def main():

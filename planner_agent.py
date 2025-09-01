@@ -18,10 +18,10 @@ Q&A history:
 
 
 class WebSearchPlannerTool:
-    input_type = ResearchContext
+    input_type = None
     output_type = WebSearchPlan
 
-    def __new__(cls):
+    def __new__(cls, context: ResearchContext):
         # Create the agent
         agent = Agent(
             name="PlannerAgent",
@@ -37,7 +37,7 @@ class WebSearchPlannerTool:
         )
 
         # Wrap run() so we can feed richer context
-        async def run_with_context(context: ResearchContext) -> WebSearchPlan:
+        async def run_with_context() -> WebSearchPlan:
             """
             Generate a plan of web searches from richer context.
             """
@@ -61,4 +61,5 @@ class WebSearchPlannerTool:
 
         # Return the actual tool object from as_tool
         tool.run = run_with_context
+        print("WebSearch Tool run has been overridden:", tool.run)
         return tool

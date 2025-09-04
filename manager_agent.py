@@ -1,8 +1,10 @@
 from tools.question_generator import question_generator_tool
-from tools.search_terms import search_terms_generator_tool
+from tools.search_terms_generator import search_terms_generator_tool
+from tools.search import search_tool
 from schema import ResearchContext, Question, QAItem, WebSearchPlan
 from agents import Agent, Runner, trace
 from typing import Union
+import asyncio
 
 
 HOW_MANY_QUESTIONS = 3
@@ -35,7 +37,8 @@ class ManagerAgent:
 
         self.tools = [
             question_generator_tool,
-            search_terms_generator_tool
+            search_terms_generator_tool,
+            search_tool
         ]
 
         self.agent = Agent(
@@ -81,5 +84,17 @@ class ManagerAgent:
             print('[question]:', self.context.qa_history)
         elif isinstance(output, WebSearchPlan):
             print('[web search plan]:', output)
+            # Launch parallel searches
+            async def search_one(item):
+                return await Runner.run_tool(
+                    search_tool,
+                    {"query": item.query}
+                )
+
+            tasks = [search_one(term) for term in output.searches]
+            search_results = await asyncio.gather(*tasks)
+
+            print('[search results]:', search_results)
+            return search_results
 
         return output

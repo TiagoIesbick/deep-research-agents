@@ -16,10 +16,10 @@ Input:
 Steps:
 1) Parse the JSON from the user message to get the initial_query and qa_history.
 2) If qa_history is empty:
-   - Ask the very first clarifying question (5–25 words) that best frames the user’s initial_query.
+   - Ask the very first clarifying question (5–50 words) that best frames the user’s initial_query.
 3) If qa_history is not empty:
    - Identify the highest-utility remaining uncertainty given qa_history.
-   - Ask ONE concrete follow-up question (5–25 words) that reduces that uncertainty.
+   - Ask ONE concrete follow-up question (5–50 words) that reduces that uncertainty.
    - Do NOT repeat or rephrase any prior question.
 4) Fill 'reasoning' with a concise, non-sensitive justification (1 sentence).
 

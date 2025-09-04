@@ -1,15 +1,21 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+from pydantic import BaseModel, Field, model_validator
+import json
+
+
+RoleAgent = Literal["Agent"]
+RoleUser = Literal["User"]
 
 
 class Question(BaseModel):
-    role: str = Field(default="Agent", description="Always 'Agent' for AI questions")
-    reasoning: str = Field(description="Your reasoning for why this question is important to ask at this point.")
-    question: str = Field(description="The question to ask.")
+    role: RoleAgent = Field(default="Agent", description="Always 'Agent'")
+    reasoning: str = Field(description="Why this question matters now.")
+    question: str = Field(description="One precise clarifying question.")
 
 
 class Answer(BaseModel):
-    role: str = Field(default="User", description="Always 'User' for answers")
-    answer: str = Field(description="The user's answer to the corresponding question.")
+    role: RoleUser = Field(default="User", description="Always 'User'")
+    answer: str = Field(description="User's answer.")
 
 
 class QAItem(BaseModel):
@@ -18,21 +24,12 @@ class QAItem(BaseModel):
 
 
 class ResearchContext(BaseModel):
-    initial_query: str = Field(..., description="The user's original query.")
-    qa_history: list[QAItem] = Field(default_factory=list, description="List of asked questions and their answers.")
+    initial_query: str = Field(..., description="Original user query.")
+    qa_history: list[QAItem] = Field(default_factory=list)
 
     def to_json_str(self) -> str:
         """Compact JSON string for feeding into prompts."""
-        return self.model_dump_json(indent=2, exclude_none=True)
-
-    def to_text_summary(self) -> str:
-        """Readable text version for LLM reasoning."""
-        summary = [f"Initial query: {self.initial_query}"]
-        for i, item in enumerate(self.qa_history, start=1):
-            summary.append(f"Q{i}: {item.question.question}")
-            if item.answer:
-                summary.append(f"A{i}: {item.answer.answer}")
-        return "\n".join(summary)
+        return json.dumps(self.model_dump(exclude_none=True), separators=(",", ":"))
 
 
 class WebSearchItem(BaseModel):
@@ -41,4 +38,11 @@ class WebSearchItem(BaseModel):
 
 
 class WebSearchPlan(BaseModel):
-    searches: list[WebSearchItem] = Field(default_factory=list, description="A list of web searches to perform to best answer the query.")
+    searches: list[WebSearchItem] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def ensure_no_duplicates(self):
+        qs = [s.query.strip().lower() for s in self.searches]
+        if len(qs) != len(set(qs)):
+            raise ValueError("Duplicate search queries are not allowed.")
+        return self

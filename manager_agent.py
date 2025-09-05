@@ -1,10 +1,10 @@
 from tools.question_generator import question_generator_tool
 from tools.search_terms_generator import search_terms_generator_tool
-from tools.search import search_tool
+from tools.search_executor import search_executor_tool
 from schema import ResearchContext, Question, QAItem, WebSearchPlan
 from agents import Agent, Runner, trace
 from typing import Union
-import asyncio
+# import asyncio
 
 
 HOW_MANY_QUESTIONS = 3
@@ -38,7 +38,7 @@ class ManagerAgent:
         self.tools = [
             question_generator_tool,
             search_terms_generator_tool,
-            search_tool
+            search_executor_tool
         ]
 
         self.agent = Agent(
@@ -51,29 +51,8 @@ class ManagerAgent:
 
     async def run(self):
         """Run the manager with the current context (does not overwrite user input)."""
-        role_map = {"Agent": "assistant", "User": "user"}
-
-        # Build the conversation transcript (for the agent's awareness)
-        transcript = [{"role": "user", "content": self.context.initial_query}]
-
-        for qa in self.context.qa_history:
-            transcript.append({
-                "role": role_map[qa.question.role],
-                "content": qa.question.question
-            })
-            if qa.answer:
-                transcript.append({
-                    "role": role_map[qa.answer.role],
-                    "content": qa.answer.answer
-                })
-
-        # Inject the canonical context string
-        ctx_json = self.context.to_json_str()
-        system_ctx = f"RESEARCH_CONTEXT_JSON:\n```json\n{ctx_json}\n```"
-
         with trace("Research Manager Session"):
-            input_data = [{"role": "system", "content": system_ctx}] + transcript
-            result = await Runner.run(self.agent, input_data)
+            result = await Runner.run(self.agent, self.context.to_input_data())
             print('[result]:', result)
 
         # If the result is a Question → add a QAItem (without answer yet)
@@ -85,16 +64,16 @@ class ManagerAgent:
         elif isinstance(output, WebSearchPlan):
             print('[web search plan]:', output)
             # Launch parallel searches
-            async def search_one(item):
-                return await Runner.run_tool(
-                    search_tool,
-                    {"query": item.query}
-                )
+            # async def search_one(item):
+            #     return await Runner.run_tool(
+            #         search_tool,
+            #         {"query": item.query}
+            #     )
 
-            tasks = [search_one(term) for term in output.searches]
-            search_results = await asyncio.gather(*tasks)
+            # tasks = [search_one(term) for term in output.searches]
+            # search_results = await asyncio.gather(*tasks)
 
-            print('[search results]:', search_results)
-            return search_results
+            # print('[search results]:', search_results)
+            # return search_results
 
         return output

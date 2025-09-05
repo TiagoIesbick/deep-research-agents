@@ -1,5 +1,6 @@
 from agents import WebSearchTool, ModelSettings
 from tools.tool_wrapper import tool_from_agent
+from schema import SearchResult
 
 
 SEARCH_INSTRUCTIONS = """
@@ -20,7 +21,7 @@ Operational rules:
 search_tool = tool_from_agent(
     agent_name="SearchAgent",
     agent_instructions=SEARCH_INSTRUCTIONS,
-    output_type=str,
+    output_type=SearchResult,
     tool_name="web_search",
     tool_description="Search the web for a given query and return a concise 2–3 paragraph summary.",
     tools=[WebSearchTool(search_context_size="low")],

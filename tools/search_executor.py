@@ -1,26 +1,21 @@
-from tkinter import E
-from tools.search import search_tool
-from tools.tool_wrapper import tool_from_agent
-from schema import ExecutedSearchPlan
+from schema import WebSearchPlan, SearchResult, ExecutedSearchPlan
+from tools.search_agent import run_search
+from agents import function_tool
+import asyncio
 
 
-SEARCH_EXECUTOR_INSTRUCTIONS = """
-Role:
-- You are the Search Executor.
+@function_tool
+async def execute_search_plan(plan: WebSearchPlan) -> ExecutedSearchPlan:
+    """Executes all queries in a WebSearchPlan in parallel and returns their summaries."""
+    tasks = [run_search(q.query) for q in plan.searches]
+    summaries = await asyncio.gather(*tasks)
 
-Input:
-- the user input will be a WebSearchPlan (list of queries).
+    results = [
+        SearchResult(query=plan.searches[i].query, summary=summaries[i])
+        for i in range(len(plan.searches))
+    ]
 
-Task:
-- Run the search tool for each query in parallel.
-- Return an ExecutedSearchPlan containing each query and its summary.
-"""
+    print('[execute_search_plan]:', results)
 
-search_executor_tool = tool_from_agent(
-    agent_name="SearchExecutor",
-    agent_instructions=SEARCH_EXECUTOR_INSTRUCTIONS,
-    output_type=ExecutedSearchPlan,
-    tool_name="execute_search",
-    tool_description="Run the search tool for each query in parallel.",
-    tools=[search_tool]
-)
+    return ExecutedSearchPlan(results=results)
+

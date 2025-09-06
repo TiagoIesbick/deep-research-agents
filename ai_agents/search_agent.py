@@ -1,6 +1,8 @@
 from agents import Agent, WebSearchTool, Runner
+from schema import WebSearchItem
 
 
+# Instructions for the SearchAgent
 SEARCH_INSTRUCTIONS = """
 Role:
 - You are a research assistant.
@@ -8,7 +10,11 @@ Role:
 Task:
 - Given a query, you must use the `web_search_preview` tool to retrieve information, thenproduce a concise summary of the results.
 
+Input:
+- the user input will be a WebSearchItem JSON string.
+
 Operational rules:
+- Parse the JSON from the user message to get the query and the reason.
 - Always call the `web_search_preview` tool when given a query.
 - From the `web_search_preview` tool results, produce a concise summary of the results.
 - The summary must 2-3 paragraphs and less than 300 words.
@@ -26,7 +32,7 @@ search_agent = Agent(
     output_type=str
 )
 
-async def run_search(query: str) -> str:
+async def run_search(query: WebSearchItem) -> str:
     """Run a single search with controlled summarization."""
-    result = await Runner.run(search_agent, f"query: {query}")
+    result = await Runner.run(search_agent, query.to_json_str())
     return result.final_output

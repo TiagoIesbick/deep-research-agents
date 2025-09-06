@@ -1,13 +1,13 @@
 from agents import Agent
 from typing import Type, Union
-from schema import ExecutedSearchPlan, Question, WebSearchPlan
+from schema import ExecutedSearchPlan, Question, ReportData, WebSearchPlan
 from agents.tool import Tool
 
 
 def tool_from_agent(
     agent_name: str,
     agent_instructions: str,
-    output_type: Type[Union[Question, WebSearchPlan, str, ExecutedSearchPlan]],
+    output_type: Type[Union[Question, WebSearchPlan, ExecutedSearchPlan, ReportData]],
     tool_name: str,
     tool_description: str,
     **kwargs

@@ -1,7 +1,8 @@
 from tools.question_generator import question_generator_tool
+from tools.report_writer import report_writer_tool
 from tools.search_terms_generator import search_terms_generator_tool
 from tools.search_executor import execute_search_plan
-from schema import ResearchContext, Question, QAItem, WebSearchPlan, ExecutedSearchPlan
+from schema import ReportData, ResearchContext, Question, QAItem, WebSearchPlan, ExecutedSearchPlan
 from agents import Agent, Runner, trace
 from typing import Union
 
@@ -23,11 +24,12 @@ Operational rules:
 - If Q&A turns < {HOW_MANY_QUESTIONS} → call generate_question(context=RESEARCH_CONTEXT_JSON).
 - If Q&A turns == {HOW_MANY_QUESTIONS} → call generate_search_terms(context=RESEARCH_CONTEXT_JSON).
 - After generate_search_terms returns a WebSearchPlan → immediately call execute_search_plan(plan).
-- Never generate question text or search terms or summaries yourself; only tools produce them.
+- After execute_search_plan returns an ExecutedSearchPlan → immediately call report_writer(executed_plan=EXECUTED_PLAN, initial_query=RESEARCH_CONTEXT_JSON.initial_query).
+- Never generate question text or search terms or summaries or reports yourself; only tools produce them.
 - Do not modify or re-serialize the context.
 
 Goal:
-- After exactly {HOW_MANY_QUESTIONS} clarifying Q&A turns, produce a well-scoped research plan by invoking the generate_search_terms tool, then enrich it with executed search results by invoking execute_search_plan.
+- After exactly {HOW_MANY_QUESTIONS} clarifying Q&A turns, produce a final cohesive research report.
 """
 
 
@@ -38,7 +40,8 @@ class ManagerAgent:
         self.tools = [
             question_generator_tool,
             search_terms_generator_tool,
-            execute_search_plan
+            execute_search_plan,
+            report_writer_tool
         ]
 
         self.agent = Agent(
@@ -46,7 +49,7 @@ class ManagerAgent:
             instructions=MANAGER_INSTRUCTIONS,
             tools=self.tools,
             model="gpt-5",
-            output_type=Union[Question, WebSearchPlan, ExecutedSearchPlan]
+            output_type=Union[Question, WebSearchPlan, ExecutedSearchPlan, ReportData]
         )
 
     async def run(self):
@@ -65,5 +68,7 @@ class ManagerAgent:
             print('[web search plan]:', output)
         elif isinstance(output, ExecutedSearchPlan):
             print('[executed search plan]:', output)
+        elif isinstance(output, ReportData):
+            print('[report data]:', output)
 
         return output

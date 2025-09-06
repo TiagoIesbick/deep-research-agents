@@ -1,6 +1,6 @@
 import gradio as gr
 from dotenv import load_dotenv
-from manager_agent import ManagerAgent
+from ai_agents.manager_agent import ManagerAgent
 from schema import ResearchContext, Answer, Question, WebSearchPlan
 import asyncio
 

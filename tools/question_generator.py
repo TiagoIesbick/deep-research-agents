@@ -11,7 +11,7 @@ Task:
 - Conducting an interactive questioning session.
 
 Input:
-- the user input will be a ResearchContext JSON string.
+- The user input will be a ResearchContext JSON string.
 
 Steps:
 1) Parse the JSON from the user message to get the initial_query and qa_history.

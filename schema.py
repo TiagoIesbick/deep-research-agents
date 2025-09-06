@@ -62,6 +62,10 @@ class WebSearchItem(BaseModel):
     reason: str = Field(description="Your reasoning for why this search is important to the query.")
     query: str = Field(description="The search term to use for the web search.")
 
+    def to_json_str(self) -> str:
+        """Compact JSON string for feeding into prompts."""
+        return json.dumps(self.model_dump(exclude_none=True), separators=(",", ":"))
+
 
 class WebSearchPlan(BaseModel):
     searches: list[WebSearchItem] = Field(default_factory=list)
@@ -81,3 +85,9 @@ class SearchResult(BaseModel):
 
 class ExecutedSearchPlan(BaseModel):
     results: list[SearchResult]
+
+
+class ReportData(BaseModel):
+    short_summary: str = Field(description="A short 2-3 sentence summary of the findings.")
+    markdown_report: str = Field(description="The final report")
+    follow_up_questions: list[str] = Field(description="Suggested topics to research further")

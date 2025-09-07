@@ -11,7 +11,7 @@ Task:
   using only the executed search plan results provided.
 
 Input:
-- `executed_plan`: the executed search plan with queries and summaries.
+- `executed_plan`: the executed search plan results with queries and summaries.
 - `initial_query`: the original research query string.
 
 Operational rules:
@@ -19,7 +19,10 @@ Operational rules:
 - Synthesize insights clearly and logically.
 - Stay faithful to the executed plan data (do not invent information).
 - Length: 500–700 words.
-- The final output should be in markdown format
+- Fill 'markdown_report' with the final report in markdown format.
+
+Output:
+- A ReportData schema.
 """
 
 report_writer_tool = tool_from_agent(

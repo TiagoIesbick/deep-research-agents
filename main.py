@@ -30,7 +30,7 @@ async def agent_chat(user_message: str, chat_history: list[dict[str, str]]):
     if isinstance(result, Question):
         chat_history.append({"role": "assistant", "content": result.question})
     elif isinstance(result, EmailStatus):
-        msg = 'Research Report sent to your email' if result.status == 'success' else result.error_message
+        msg = '🔍📝Research Report sent to your email' if result.status == 'success' else result.error_message
         chat_history.append({"role": "assistant", "content": msg})
 
     yield chat_history, chat_history

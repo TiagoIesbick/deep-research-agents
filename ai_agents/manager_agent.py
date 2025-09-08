@@ -60,25 +60,20 @@ class ManagerAgent:
             output_type=Union[Question, WebSearchPlan, ExecutedSearchPlan, ReportData, EmailStatus]
         )
 
+    def reset(self):
+        self.context = ResearchContext(initial_query="", qa_history=[])
+
     async def run(self):
         """Run the manager with the current context (does not overwrite user input)."""
         with trace("Research Manager Session"):
             result = await Runner.run(self.agent, self.context.to_input_data())
-            print('[result]:', result)
 
         # If the result is a Question → add a QAItem (without answer yet)
         # Handle tool outputs properly
         output = result.final_output
         if isinstance(output, Question):
             self.context.qa_history.append(QAItem(question=output))
-            print('[question]:', self.context.qa_history)
-        elif isinstance(output, WebSearchPlan):
-            print('[web search plan]:', output)
-        elif isinstance(output, ExecutedSearchPlan):
-            print('[executed search plan]:', output)
-        elif isinstance(output, ReportData):
-            print('[report data]:', output)
         elif isinstance(output, EmailStatus):
-            print('[email status]:', output)
+            self.reset()
 
         return output
